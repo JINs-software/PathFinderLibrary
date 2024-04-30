@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="..\include\JPSPathFinder.h">
+      <Filter>JPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\AStarPathFinder.h">
+      <Filter>AStar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\PathFinder.h">
+      <Filter>PathFinder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\PathStruct.h">
+      <Filter>PathFinder</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="PathFinder">
+      <UniqueIdentifier>{b2dd6a3e-727a-4324-b31c-d44107517afe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JPS">
+      <UniqueIdentifier>{b608a5b8-ff5d-4f3f-a5df-539b5c544dff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AStar">
+      <UniqueIdentifier>{20885907-909b-4d65-b363-901808ed6476}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
