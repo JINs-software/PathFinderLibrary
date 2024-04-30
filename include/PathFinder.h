@@ -52,6 +52,7 @@ public:
 
 protected:
 	T calculate_H(const Pos<T>& start, const Pos<T>& dest);
+	T calculate_G(const Pos<T>& node, const PathNode<T>& parentNode);
 	bool checkAvailability(T y, T x);
 
 private:
@@ -104,13 +105,13 @@ void PathFinder<T>::Init(T rangeY, T rangeX)
 template<typename T>
 void PathFinder<T>::SetObstacle(T y, T x)
 {
-	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] | bitMask[x % BYTE_BIT];
+	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] | setMasks[x % BYTE_BIT];
 }
 
 template<typename T>
 void PathFinder<T>::UnsetObstacle(T y, T x)
 {
-	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] & reverseMask[x % BYTE_BIT];
+	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] & unsetMasks[x % BYTE_BIT];
 }
 
 template<typename T>
@@ -126,13 +127,27 @@ T PathFinder<T>::calculate_H(const Pos<T>& start, const Pos<T>& dest)
 }
 
 template<typename T>
+T PathFinder<T>::calculate_G(const Pos<T>& node, const PathNode<T>& parentNode)
+{
+	if (node.pos.y == parentNode.pos.y) {
+		return parentNode.g + 10 * std::abs(node.pos.x - parentNode.pos.x);
+	}
+	else if (node.pos.x == parentNode.pos.x) {
+		return parentNode.g + 10 * std::abs(node.pos.y - parentNode.pos.y);
+	}
+	else {
+		return parentNode.g + 14 * std::abs(node.pos.x - parentNode.pos.x);
+	}
+}
+
+template<typename T>
 bool PathFinder<T>::checkAvailability(T y, T x)
 {
 	if (y < 0 || x < 0 || y >= m_RangeY || x >= m_RangeX) {
 		return false;
 	}
 	else {
-		if ((*(*m_ObstacleBitMapLLRR)[y][x / BYTE_BIT] & bitMask[x % BYTE_BIT]) == 0) {
+		if ((*(*m_ObstacleBitMapLLRR)[y][x / BYTE_BIT] & setMasks[x % BYTE_BIT]) == 0) {
 			// 장애물|벽 x
 			return true;
 		}

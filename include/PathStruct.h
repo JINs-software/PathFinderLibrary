@@ -155,7 +155,7 @@ struct PathNode {
 };
 
 
-BYTE bitMask[8] = {
+BYTE setMasks[8] = {
 	0b1000'0000,
 	0b0100'0000,
 	0b0010'0000,
@@ -165,7 +165,7 @@ BYTE bitMask[8] = {
 	0b0000'0010,
 	0b0000'0001
 };
-BYTE reverseMask[8] = {
+BYTE unsetMasks[8] = {
 	0b0111'1111,
 	0b1011'1111,
 	0b1101'1111,
@@ -227,13 +227,9 @@ BYTE GetMSBIdx(BYTE byte) {
 	return FindSetAbitPos(byte);
 }
 
-
-// 1111 1111
-// -> 0000 0000
-// 1101 0111
-//  ~ -> 0010 1000
-// 
-// find
+// 0b1101'0110
+// ~> 
+// 0b0010'1001
 BYTE GetLISBIdx(BYTE byte) {
 	if (byte == 0) {
 		return 7;

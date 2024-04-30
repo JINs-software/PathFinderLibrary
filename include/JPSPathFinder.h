@@ -21,14 +21,14 @@ public:
 	};
 	struct JPSNode {
 		bool operator<(const JPSNode& other) const {
-			return pnode < other.pnode;
+			return pathNode < other.pathNode;
 		}
 		bool operator>(const JPSNode& other) const {
-			return pnode > other.pnode;
+			return pathNode > other.pathNode;
 		}
 
-		PathNode<T> pnode;
-		DIR parentDir;
+		PathNode<T> pathNode;
+		DIR dir;
 	};
 public:
 	virtual void Init(T rangeY, T rangeX) override;
@@ -39,10 +39,21 @@ public:
 
 private:
 	bool checkDestination(const JPSNode& jnode, Pos<T> destPos);
+	void createNewNodeLL(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeRR(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeUU(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeDD(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeLU(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeLR(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeLD(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+	void createNewNodeRU(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
+
 	T getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
+	T getEndPosOfObstacle(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
 
 protected:
 	using PathFinder<T>::calculate_H;
+	using PathFinder<T>::calculate_G;
 	using PathFinder<T>::checkAvailability;
 
 protected:
@@ -182,15 +193,15 @@ void JPSPathFinder<T>::SetObstacle(T y, T x)
 
 	// UU DD
 	Pos<T> coordUUDD = coordXYtoUUDD({ y, x });
-	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] | bitMask[coordUUDD.x % BYTE_BIT];
+	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] | setMasks[coordUUDD.x % BYTE_BIT];
 
 	// LU RD		
 	Pos<T> coordLURD = coordLURD({ y, x });
-	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] | bitMask[coordLURD.x % BYTE_BIT];
+	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] | setMasks[coordLURD.x % BYTE_BIT];
 
 	// LD RU
 	Pos<T> coordLDRU = coordLDRU({ y, x });
-	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] | bitMask[coordLDRU.x % BYTE_BIT];
+	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] | setMasks[coordLDRU.x % BYTE_BIT];
 }
 
 template<typename T>
@@ -200,15 +211,15 @@ void JPSPathFinder<T>::UnsetObstacle(T y, T x)
 
 	// UU DD
 	Pos<T> coordUUDD = coordXYtoUUDD({ y, x });
-	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] & reverseMask[coordUUDD.x % BYTE_BIT];
+	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] & unsetMasks[coordUUDD.x % BYTE_BIT];
 
 	// LU RD		
 	Pos<T> coordLURD = coordLURD({ y, x });
-	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] & reverseMask[coordLURD.x % BYTE_BIT];
+	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] & unsetMasks[coordLURD.x % BYTE_BIT];
 
 	// LD RU
 	Pos<T> coordLDRU = coordLDRU({ y, x });
-	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] & reverseMask[coordLDRU.x % BYTE_BIT];
+	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] & unsetMasks[coordLDRU.x % BYTE_BIT];
 }
 
 template<typename T>
@@ -229,15 +240,15 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 	startNode.g = 0;
 	startNode.h = calculate_H(startNode.pos, destPos);
 	startNode.f = startNode.g + startNode.h;
-	openList.push({ startNode, NONE_DIR });
+	openList.push({ startNode, NONE_DIR});
 
 	// 탐색
 	while (!openList.empty()) {
 		JPSNode jnode = openList.top();
 		openList.pop();
-		trackList.push_back(jnode.pnode);
-		Pos<T> pos = jnode.pnode.pos;
-		parentPosMap.insert({ pos, jnode.pnode.parentPos });
+		trackList.push_back(jnode.pathNode);
+		Pos<T> pos = jnode.pathNode.pos;
+		parentPosMap.insert({ pos, jnode.pathNode.parentPos });
 
 		// 직선 또는 대각선 방향으로 도착지가 있는 지 확인
 		if (checkDestination(jnode, destPos)) {
@@ -251,48 +262,48 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 
 		// 탐색 가능한 방향으로 탐색
 		// LL 탐색
-		if (jnode.parentDir != RR && jnode.parentDir != UR && jnode.parentDir != DR) {
+		if (jnode.dir != RR && jnode.dir != UR && jnode.dir != DR) {
 			if (checkAvailability(pos.y, pos.x - 1)) {
 				checkNewNode(jnode, LL, openList, destPos, parentPosMap, trackList);
 			}
 		}
 		// RR 탐색
-		if (jnode.parentDir != LL && jnode.parentDir != UL && jnode.parentDir != DL) {
+		if (jnode.dir != LL && jnode.dir != UL && jnode.dir != DL) {
 			if (checkAvailability(pos.y, pos.x + 1)) {
 				checkNewNode(jnode, RR, openList, destPos, parentPosMap, trackList);
 			}
 		}
 		// UU 탐색
-		if (jnode.parentDir != DD && jnode.parentDir != DL && jnode.parentDir != DR) {
+		if (jnode.dir != DD && jnode.dir != DL && jnode.dir != DR) {
 			if (checkAvailability(pos.y - 1, pos.x)) {
 				checkNewNode(jnode, UU, openList, destPos, parentPosMap, trackList);
 			}
 		}
 		// DD 탐색
-		if (jnode.parentDir != UU && jnode.parentDir != UL && jnode.parentDir != UR) {
+		if (jnode.dir != UU && jnode.dir != UL && jnode.dir != UR) {
 			if (checkAvailability(pos.y + 1, pos.x)) {
 				checkNewNode(jnode, DD, openList, destPos, parentPosMap, trackList);
 			}
 		}
-		if (/*jnode.parentDir != UL &&*/ jnode.parentDir != DR) {
+		if (/*jnode.dir != UL &&*/ jnode.dir != DR) {
 			// UL 탐색
 			if (checkAvailability(pos.y - 1, pos.x - 1)) {
 				checkNewNode(jnode, UL, openList, destPos, parentPosMap, trackList);
 			}
 		}
-		if (jnode.parentDir != UL /* && jnode.parentDir != DR*/) {
+		if (jnode.dir != UL /* && jnode.dir != DR*/) {
 			// DR 탐색
 			if (checkAvailability(pos.y + 1, pos.x + 1)) {
 				checkNewNode(jnode, DR, openList, destPos, parentPosMap, trackList);
 			}
 		}
-		if (/*jnode.parentDir != UR && */jnode.parentDir != DL) {
+		if (/*jnode.dir != UR && */jnode.dir != DL) {
 			// UR 탐색
 			if (checkAvailability(pos.y - 1, pos.x + 1)) {
 				checkNewNode(jnode, UR, openList, destPos, parentPosMap, trackList);
 			}
 		}
-		if (jnode.parentDir != UR/* && jnode.parentDir != DL*/) {
+		if (jnode.dir != UR/* && jnode.dir != DL*/) {
 			// DL 탐색
 			if (checkAvailability(pos.y + 1, pos.x - 1)) {
 				checkNewNode(jnode, DL, openList, destPos, parentPosMap, trackList);
@@ -323,7 +334,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 template<typename T>
 bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos)
 {
-	Pos<T> nowPos = jnode.pnode.pos;
+	Pos<T> nowPos = jnode.pathNode.pos;
 	// 8방향의 직선 경로 확인
 	// LL RR
 	T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, nowPos.y, nowPos.x);
@@ -375,11 +386,67 @@ bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos)
 }
 
 template<typename T>
+void JPSPathFinder<T>::createNewNodeLL(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList)
+{
+	T x;
+
+	if (y > 0) {
+		x = jnode.pathNode.x;
+		while (x > 0) {
+			T obsX = getEndPosOfObstacle(m_ObstacleBitMapLLRR, true, jnode.pathNode.y - 1, x);
+			PathNode<T> pathNode;
+			pathNode.pos.y = y - 1;
+			pathNode.pos.x = obsX;
+			pathNode.g = calculate_G(pathNode, jnode.pathNode);
+			pathNode.h = calculate_H(pathNode, destPos);
+			pathNode.f = pathNode.g + pathNode.h;
+			pathNode.parentPos = jnode.pathNode;
+			openList.push_back(JPSNode{ pathNode, UL });
+			
+			x = obsX;
+		}
+	}
+	
+	if (y < m_ObstacleBitMapLLRR.size() - 1) {
+		x = jnode.pathNode.x;
+		while (x > 0) {
+			T obsX = getEndPosOfObstacle(m_ObstacleBitMapLLRR, true, jnode.pathNode.y + 1, jnode.pathNode.x);
+			PathNode<T> pathNode;
+			pathNode.pos.y = y + 1;
+			pathNode.pos.x = obsX;
+			pathNode.g = calculate_G(pathNode, jnode.pathNode);
+			pathNode.h = calculate_H(pathNode, destPos);
+			pathNode.f = pathNode.g + pathNode.h;
+			pathNode.parentPos = jnode.pathNode;
+			openList.push_back(JPSNode{ pathNode, DL });
+
+			x = obsX;
+		}
+	}
+}
+
+template<typename T>
+void JPSPathFinder<T>::createNewNodeRR(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList)
+{
+
+}
+
+template<typename T>
+void JPSPathFinder<T>::createNewNodeUU(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList)
+{
+}
+
+template<typename T>
+void JPSPathFinder<T>::createNewNodeDD(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList)
+{
+}
+
+template<typename T>
 T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
 {
 	int byteIdx = x / BYTE_BIT;
-	BYTE bitIdx = x & BYTE_BIT;
-	BYTE byte = *straightPath[y][x];
+	BYTE bitIdx = x % BYTE_BIT;
+	BYTE byte = *straightPath[y][byteIdx];
 
 	T ret = 0;
 
@@ -415,6 +482,66 @@ T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPat
 		else {
 			for (byteIdx += 1; byteIdx < straightPath[0].size(); byteIdx++) {
 				byte = *straightPath[y][byteIdx];
+				if (byte != 0) {
+					ret = (T)byteIdx * BYTE_BIT;
+					ret += (T)GetMSBIdx(byte);
+					break;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+template<typename T>
+T JPSPathFinder<T>::getEndPosOfObstacle(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
+{
+	int byteIdx = x / BYTE_BIT;
+	BYTE bitIdx = x % BYTE_BIT;
+	BYTE byte = *straightPath[y][byteIdx];
+	byte = ~byte;
+
+	T ret = 0;
+
+	// 1101'1101
+	// ~>
+	// 0010'0010
+
+	if (leftDir) {	// 좌측 직선 방향
+		// x위치의 비트 인덱스가 포함된 바이트와 해당 바이트의 반전 바이트의 MSB 체크
+		if (byte != 0 && GetMSBIdx(byte) < bitIdx) {
+			byte = byte >> (BYTE_BIT - bitIdx);
+			byte = byte << (BYTE_BIT - bitIdx);
+
+			ret = (T)byteIdx * BYTE_BIT;
+			ret += (T)GetLSBIdx(byte);
+		}
+		else {
+			for (byteIdx -= 1; byteIdx >= 0; byteIdx--) {
+				byte = *straightPath[y][byteIdx];
+				byte = ~byte;
+				if (byte != 0) {
+					ret = (T)byteIdx * BYTE_BIT;
+					ret += (T)GetLSBIdx(byte);
+					break;
+				}
+			}
+		}
+	}
+	else {			// 우측 직선 방향
+		// x위치의 비트 인덱스가 포함된 바이트와 해당 바이트의 반전 바이트의 LSB 체크
+		if (byte != 0 && bitIdx < GetLSBIdx(byte)) {
+			byte = byte << (bitIdx + 1);
+			byte = byte >> (bitIdx + 1);
+
+			ret = (T)byteIdx * BYTE_BIT;
+			ret += (T)GetMSBIdx(byte);
+		}
+		else {
+			for (byteIdx += 1; byteIdx < straightPath[0].size(); byteIdx++) {
+				byte = *straightPath[y][byteIdx];
+				byte = ~byte;
 				if (byte != 0) {
 					ret = (T)byteIdx * BYTE_BIT;
 					ret += (T)GetMSBIdx(byte);
