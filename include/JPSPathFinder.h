@@ -38,8 +38,8 @@ public:
 	virtual typename PathFinder<T>::iterator FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList) override;
 
 private:
-	T getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
 	bool checkDestination(const JPSNode& jnode, Pos<T> destPos);
+	T getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
 
 protected:
 	using PathFinder<T>::calculate_H;
@@ -180,71 +180,35 @@ void JPSPathFinder<T>::SetObstacle(T y, T x)
 {
 	PathFinder<T>::SetObstacle(y, x);
 
-	T ry = m_RangeX - 1 - x;
-	T rx = y;
-
 	// UU DD
-	*m_ObstacleBitMapUUDD[ry][rx / BYTE_BIT] = *m_ObstacleBitMapUUDD[ry][rx / BYTE_BIT] | bitMask[rx % BYTE_BIT];
+	Pos<T> coordUUDD = coordXYtoUUDD({ y, x });
+	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] | bitMask[coordUUDD.x % BYTE_BIT];
 
-	T ty, tx;
 	// LU RD		
-	if (x >= y) {
-		ty = (m_RangeX - 1) - x + y;
-		tx = y;
-	}
-	else {
-		ty = (m_RangeX - 1) + y - x;
-		tx = x;
-	}
-	*m_ObstacleBitMapLURD[ty][tx / BYTE_BIT] = *m_ObstacleBitMapLURD[ty][tx / BYTE_BIT] | bitMask[tx % BYTE_BIT];
+	Pos<T> coordLURD = coordLURD({ y, x });
+	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] | bitMask[coordLURD.x % BYTE_BIT];
 
 	// LD RU
-	ry = x;
-	rx = m_RangeY - 1 - y;
-	if (rx >= ry) {
-		ty = (m_RangeY - 1) - rx + ry;
-		tx = ry;
-	}
-	else {
-		ty = (m_RangeY - 1) + ry - rx;
-		tx = rx;
-	}
-	*m_ObstacleBitMapLDRU[ty][tx / BYTE_BIT] = *m_ObstacleBitMapLDRU[ty][tx / BYTE_BIT] | bitMask[tx % BYTE_BIT];
+	Pos<T> coordLDRU = coordLDRU({ y, x });
+	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] | bitMask[coordLDRU.x % BYTE_BIT];
 }
 
 template<typename T>
 void JPSPathFinder<T>::UnsetObstacle(T y, T x)
 {
-	T ry = m_RangeX - 1 - x;
-	T rx = y;
+	PathFinder<T>::UnsetObstacle(y, x);
 
 	// UU DD
-	*m_ObstacleBitMapUUDD[ry][rx / BYTE_BIT] = *m_ObstacleBitMapUUDD[ry][rx / BYTE_BIT] & reverseMask[rx % BYTE_BIT];
+	Pos<T> coordUUDD = coordXYtoUUDD({ y, x });
+	*m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] = *m_ObstacleBitMapUUDD[coordUUDD.y][coordUUDD.x / BYTE_BIT] & reverseMask[coordUUDD.x % BYTE_BIT];
 
-	T ty, tx;
 	// LU RD		
-	if (x >= y) {
-		ty = (m_RangeX - 1) - x + y;
-		tx = y;
-	}
-	else {
-		ty = (m_RangeX - 1) + y - x;
-		tx = x;
-	}
-	*m_ObstacleBitMapLURD[ty][tx / BYTE_BIT] = *m_ObstacleBitMapLURD[ty][tx / BYTE_BIT] & reverseMask[tx % BYTE_BIT];
+	Pos<T> coordLURD = coordLURD({ y, x });
+	*m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] = *m_ObstacleBitMapLURD[coordLURD.y][coordLURD.x / BYTE_BIT] & reverseMask[coordLURD.x % BYTE_BIT];
 
 	// LD RU
-	ry = x;
-	rx = m_RangeY - 1 - y;
-	if (rx >= ry) {
-		ty = (m_RangeY - 1) - rx + ry;
-		tx = ry;
-	}
-	else {
-		ty = (m_RangeY - 1) + ry - rx;
-		tx = rx;
-	}
-	*m_ObstacleBitMapLDRU[ty][tx / BYTE_BIT] = *m_ObstacleBitMapLDRU[ty][tx / BYTE_BIT] & reverseMask[tx % BYTE_BIT];
+	Pos<T> coordLDRU = coordLDRU({ y, x });
+	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] & reverseMask[coordLDRU.x % BYTE_BIT];
 }
 
 template<typename T>
@@ -357,6 +321,60 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 }
 
 template<typename T>
+bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos)
+{
+	Pos<T> nowPos = jnode.pnode.pos;
+	// 8방향의 직선 경로 확인
+	// LL RR
+	T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, nowPos.y, nowPos.x);
+	if (destPos.y == nowPos.y && destPos.x == endLL) {
+		return true;
+	}
+	T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, nowPos.y, nowPos.x);
+	if (destPos.y == nowPos.y && destPos.x == endRR) {
+		return true;
+	}
+
+	// UU DD
+	Pos<T> nowUUDD = coordXYtoUUDD(nowPos);
+	Pos<T> destUUDD = coordXYtoUUDD(destPos);
+	T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, true, nowUUDD.y, nowUUDD.x);
+	if (destUUDD.y == nowUUDD.y && destUUDD.x == endUU) {
+		return true;
+	}
+	T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, false, nowUUDD.y, nowUUDD.x);
+	if (destUUDD.y == nowUUDD.y && destUUDD.x == endDD) {
+		return true;
+	}
+
+	// LU RD
+	Pos<T> nowLURD = coordXYtoLURD(nowPos);
+	Pos<T> destLURD = coordXYtoLURD(destPos);
+	T endLU = getEndPosOfPath(m_ObstacleBitMapLURD, true, nowLURD.y, nowLURD.x);
+	if (destLURD.y == nowLURD.y && destLURD.x == endLU) {
+		return true;
+	}
+	T endRD = getEndPosOfPath(m_ObstacleBitMapLURD, false, nowLURD.y, nowLURD.x);
+	if (destLURD.y == nowLURD.y && destLURD.x == endRD) {
+		return true;
+	}
+
+	// LD RU
+	Pos<T> nowLDRU = coordXYtoLDRU(nowPos);
+	Pos<T> destLDRU = coordXYtoLDRU(destPos);
+	T endLD = getEndPosOfPath(m_ObstacleBitMapLDRU, true, nowLDRU.y, nowLDRU.x);
+	if (destLDRU.y == nowLDRU.y && destLDRU.x == endLD) {
+		return true;
+	}
+	T endRU = getEndPosOfPath(m_ObstacleBitMapLDRU, false, nowLDRU.y, nowLDRU.x);
+	if (destLDRU.y == nowLDRU.y && destLDRU.x == endRU) {
+		return true;
+	}
+
+	return false;
+}
+
+template<typename T>
 T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
 {
 	int byteIdx = x / BYTE_BIT;
@@ -407,15 +425,6 @@ T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPat
 	}
 
 	return ret;
-}
-
-template<typename T>
-bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos)
-{
-	// 8방향의 직선 경로 확인
-
-
-	return false;
 }
 
 template<typename T>
