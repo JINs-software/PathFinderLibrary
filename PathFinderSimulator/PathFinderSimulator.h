@@ -50,7 +50,7 @@ bool startFlag = false;
 PosType destX, destY;
 bool destFlag = false;
 
-bool astarFlag = true;
+bool astarFlag = false;
 AStarPathFinder<PosType> g_AStarPathFinder;
 PathFinder<PosType>::iterator path;
 

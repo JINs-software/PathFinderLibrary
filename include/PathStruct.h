@@ -175,6 +175,26 @@ BYTE unsetMasks[8] = {
 	0b1111'1101,
 	0b1111'1110
 };
+BYTE leftUnsetMasks[8] = {
+	0b1111'1111,
+	0b0111'1111,
+	0b0011'1111,
+	0b0001'1111,
+	0b0000'1111,
+	0b0000'0111,
+	0b0000'0011,
+	0b0000'0001
+};
+BYTE rightUnsetMasks[8] = {
+	0b1000'0000,
+	0b1100'0000,
+	0b1110'0000,
+	0b1111'0000,
+	0b1111'1000,
+	0b1111'1100,
+	0b1111'1110,
+	0b1111'1111
+};
 
 BYTE FindSetAbitPos(BYTE byte) {
 	BYTE len = 8;
@@ -201,15 +221,20 @@ BYTE FindSetAbitPos(BYTE byte) {
 }
 
 // find LSB
+// byte == 0 일 시 8 반환 
 BYTE GetLSBIdx(BYTE byte) {
 	if (byte == 0) {
 		return 8;
+	}
+	if ((byte & 0b0000'0001) != 0) {
+		return 7;
 	}
 
 	byte = byte & ~(byte - 1);
 	return FindSetAbitPos(byte);
 }
 // find MSB
+// byte == 0 일 시 8 반환 
 BYTE GetMSBIdx(BYTE byte) {
 	if (byte == 0) {
 		return 8;

@@ -52,7 +52,7 @@ public:
 
 protected:
 	T calculate_H(const Pos<T>& start, const Pos<T>& dest);
-	T calculate_G(const Pos<T>& node, const PathNode<T>& parentNode);
+	T calculate_G(const PathNode<T>& node, const PathNode<T>& parentNode);
 	bool checkAvailability(T y, T x);
 
 private:
@@ -68,6 +68,7 @@ private:
 protected:
 	T m_RangeY;
 	T m_RangeX;
+	std::vector<std::vector<bool>> m_ObstacleMap;
 	BYTE* m_ChunkLLRR;											// LL RR
 	std::vector<std::vector<BYTE*>> m_ObstacleBitMapLLRR;		// LL RR 
 };
@@ -84,8 +85,10 @@ void PathFinder<T>::Init(T rangeY, T rangeX)
 	colLength = m_RangeX / BYTE_BIT + ((m_RangeX % BYTE_BIT == 0) ? 0 : 1);
 	m_ChunkLLRR = new BYTE[m_RangeY * colLength];
 	memset(m_ChunkLLRR, 0, m_RangeY * colLength);
+	m_ObstacleMap.resize(m_RangeY);
 	m_ObstacleBitMapLLRR.resize(m_RangeY);
 	for (int y = 0; y < m_RangeY; y++) {
+		m_ObstacleMap[y].resize(m_RangeX, false);
 		m_ObstacleBitMapLLRR[y].resize(colLength);
 		for (int x = 0; x < colLength; x++) {
 			m_ObstacleBitMapLLRR[y][x] = m_ChunkLLRR + y * colLength + x;
@@ -105,12 +108,14 @@ void PathFinder<T>::Init(T rangeY, T rangeX)
 template<typename T>
 void PathFinder<T>::SetObstacle(T y, T x)
 {
+	m_ObstacleMap[y][x] = true;
 	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] | setMasks[x % BYTE_BIT];
 }
 
 template<typename T>
 void PathFinder<T>::UnsetObstacle(T y, T x)
 {
+	m_ObstacleMap[y][x] = false;
 	*m_ObstacleBitMapLLRR[y][x / BYTE_BIT] = *m_ObstacleBitMapLLRR[y][x / BYTE_BIT] & unsetMasks[x % BYTE_BIT];
 }
 
@@ -127,7 +132,7 @@ T PathFinder<T>::calculate_H(const Pos<T>& start, const Pos<T>& dest)
 }
 
 template<typename T>
-T PathFinder<T>::calculate_G(const Pos<T>& node, const PathNode<T>& parentNode)
+T PathFinder<T>::calculate_G(const PathNode<T>& node, const PathNode<T>& parentNode)
 {
 	if (node.pos.y == parentNode.pos.y) {
 		return parentNode.g + 10 * std::abs(node.pos.x - parentNode.pos.x);
