@@ -3,6 +3,9 @@
 #include "PathFinder.h"
 #include <Windows.h>
 
+//#define DEBUG_MODE
+#define DEBUG_MODE2
+
 template<typename T>
 class JPSPathFinder : public PathFinder<T> 
 {
@@ -39,7 +42,7 @@ public:
 	virtual typename PathFinder<T>::iterator FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList) override;
 
 private:
-	bool checkDestination(const JPSNode& jnode, Pos<T> destPos);
+	bool checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir);
 	void createNewNodeLL(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
 	void createNewNodeRR(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
 	void createNewNodeLLRR(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
@@ -212,6 +215,92 @@ void JPSPathFinder<T>::SetObstacle(T y, T x)
 	// LD RU
 	Pos<T> coordLDRU = coordXYtoLDRU({ y, x });
 	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] | setMasks[coordLDRU.x % BYTE_BIT];
+
+#if defined DEBUG_MODE
+	cout << "[LLRR]" << endl;
+	for (int y = 0; y < m_ObstacleBitMapLLRR.size(); y++) {
+		for (int x = 0; x < m_ObstacleBitMapLLRR[y].size(); x++) {
+			BYTE* bytePtr = m_ObstacleBitMapLLRR[y][x];
+			BYTE byte = *bytePtr;
+			BYTE bitMask = 0b1000'0000;
+			for (int i = 0; i < 8; i++) {
+				if ((byte & bitMask) > 0) {
+					cout << "O";
+				}
+				else {
+					cout << "X";
+				}
+
+				byte <<= 1;
+			}
+		}
+		cout << endl;
+	}
+	cout << endl;
+	cout << "[UUDD]" << endl;
+	for (int y = 0; y < m_ObstacleBitMapUUDD.size(); y++) {
+		for (int x = 0; x < m_ObstacleBitMapUUDD[y].size(); x++) {
+			BYTE* bytePtr = m_ObstacleBitMapUUDD[y][x];
+			BYTE byte = *bytePtr;
+			BYTE bitMask = 0b1000'0000;
+			for (int i = 0; i < 8; i++) {
+				if ((byte & bitMask) > 0) {
+					cout << "O";
+				}
+				else {
+					cout << "X";
+				}
+
+				byte <<= 1;
+			}
+		}
+		cout << endl;
+	}
+
+	cout << endl;
+	cout << "[LURD]" << endl;
+	for (int y = 0; y < m_ObstacleBitMapLURD.size(); y++) {
+		for (int x = 0; x < m_ObstacleBitMapLURD[y].size(); x++) {
+			BYTE* bytePtr = m_ObstacleBitMapLURD[y][x];
+			BYTE byte = *bytePtr;
+			BYTE bitMask = 0b1000'0000;
+			for (int i = 0; i < 8; i++) {
+				if ((byte & bitMask) > 0) {
+					cout << "O";
+				}
+				else {
+					cout << "X";
+				}
+
+				byte <<= 1;
+			}
+		}
+		cout << endl;
+	}
+
+	cout << endl;
+	cout << "[LDRU]" << endl;
+	for (int y = 0; y < m_ObstacleBitMapLDRU.size(); y++) {
+		for (int x = 0; x < m_ObstacleBitMapLDRU[y].size(); x++) {
+			BYTE* bytePtr = m_ObstacleBitMapLDRU[y][x];
+			BYTE byte = *bytePtr;
+			BYTE bitMask = 0b1000'0000;
+			for (int i = 0; i < 8; i++) {
+				if ((byte & bitMask) > 0) {
+					cout << "O";
+				}
+				else {
+					cout << "X";
+				}
+
+				byte <<= 1;
+			}
+		}
+		cout << endl;
+	}
+
+	cout << "====================================================================" << endl;
+#endif
 }
 
 template<typename T>
@@ -261,7 +350,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 		parentPosMap.insert({ pos, jnode.pathNode.parentPos });
 
 		// 직선 또는 대각선 방향으로 도착지가 있는 지 확인
-		if (checkDestination(jnode, destPos)) {
+		if (checkDestination(jnode, destPos, jnode.dir)) {
 			arriveFlag = true;
 			destNode.parentPos = pos;
 			destNode.pos = destPos;
@@ -297,15 +386,28 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 		}
 		// RD -> LU 탐색
 		if (jnode.dir == NONE_DIR || jnode.dir == UL) {
-			createNewNodeLURD(jnode, true, openList, destPos, parentPosMap, trackList);
+			if (jnode.pathNode.pos.x > 0 && jnode.pathNode.pos.y > 0 && m_ObstacleMap[jnode.pathNode.pos.y - 1][jnode.pathNode.pos.x - 1] == false) {
+				createNewNodeLURD(jnode, true, openList, destPos, parentPosMap, trackList);
+			}
 		}
 		// LU -> RD 탐색
 		if (jnode.dir == NONE_DIR || jnode.dir == DR) {
-			createNewNodeLURD(jnode, false, openList, destPos, parentPosMap, trackList);
+			if (jnode.pathNode.pos.x < m_RangeX - 1 && jnode.pathNode.pos.y < m_RangeY - 1 && m_ObstacleMap[jnode.pathNode.pos.y + 1][jnode.pathNode.pos.x + 1] == false) {
+				createNewNodeLURD(jnode, false, openList, destPos, parentPosMap, trackList);
+			}
 		}
-
-		// RD -> LU 탐색
-		
+		// RU -> LD 탐색
+		if (jnode.dir == NONE_DIR || jnode.dir == DL) {
+			if (jnode.pathNode.pos.x > 0 && jnode.pathNode.pos.y < m_RangeY - 1 && m_ObstacleMap[jnode.pathNode.pos.y + 1][jnode.pathNode.pos.x - 1] == false) {
+				createNewNodeLDRU(jnode, true, openList, destPos, parentPosMap, trackList);
+			}
+		}
+		// LD -> RU 탐색
+		if (jnode.dir == NONE_DIR || jnode.dir == UR) {
+			if (jnode.pathNode.pos.x < m_RangeX - 1 && jnode.pathNode.pos.y > 0 && m_ObstacleMap[jnode.pathNode.pos.y - 1][jnode.pathNode.pos.x + 1] == false) {
+				createNewNodeLDRU(jnode, false, openList, destPos, parentPosMap, trackList);
+			}
+		}
 	}
 
 	
@@ -329,54 +431,71 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 }
 
 template<typename T>
-bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos)
+bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir)
 {
-	Pos<T> nowPos = jnode.pathNode.pos;
-	// 8방향의 직선 경로 확인
-	// LL RR
-	T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, nowPos.y, nowPos.x);
-	if (destPos.y == nowPos.y && destPos.x == endLL) {
-		return true;
-	}
-	T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, nowPos.y, nowPos.x);
-	if (destPos.y == nowPos.y && destPos.x == endRR) {
+	if (jnode.pathNode.pos.x == destPos.x && jnode.pathNode.pos.y == destPos.y) {
 		return true;
 	}
 
-	// UU DD
+	Pos<T> nowPos = jnode.pathNode.pos;
+	if ((dir == DIR::LL || dir == DIR::NONE_DIR) && jnode.pathNode.pos.x > destPos.x) {
+		T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, nowPos.y, nowPos.x);
+		if (destPos.y == nowPos.y && destPos.x > endLL) {
+			return true;
+		} 
+	}
+	if ((dir == DIR::RR || dir == DIR::NONE_DIR) && jnode.pathNode.pos.x < destPos.x) {
+		T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, nowPos.y, nowPos.x);
+		if (destPos.y == nowPos.y && destPos.x < endRR) {
+			return true;
+		}
+	}
+
 	Pos<T> nowUUDD = coordXYtoUUDD(nowPos);
 	Pos<T> destUUDD = coordXYtoUUDD(destPos);
-	T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, true, nowUUDD.y, nowUUDD.x);
-	if (destUUDD.y == nowUUDD.y && destUUDD.x == endUU) {
-		return true;
+	if ((dir == DIR::UU || dir == DIR::NONE_DIR) && nowUUDD.x > destUUDD.x) {
+		T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, true, nowUUDD.y, nowUUDD.x);
+		if (destUUDD.y == nowUUDD.y && destUUDD.x > endUU) {
+			return true;
+		}
 	}
-	T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, false, nowUUDD.y, nowUUDD.x);
-	if (destUUDD.y == nowUUDD.y && destUUDD.x == endDD) {
-		return true;
+	if ((dir == DIR::DD || dir == DIR::NONE_DIR) && nowUUDD.x < destUUDD.x) {
+		T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, false, nowUUDD.y, nowUUDD.x);
+		if (destUUDD.y == nowUUDD.y && destUUDD.x < endDD) {
+			return true;
+		}
 	}
 
 	// LU RD
 	Pos<T> nowLURD = coordXYtoLURD(nowPos);
 	Pos<T> destLURD = coordXYtoLURD(destPos);
-	T endLU = getEndPosOfPath(m_ObstacleBitMapLURD, true, nowLURD.y, nowLURD.x);
-	if (destLURD.y == nowLURD.y && destLURD.x == endLU) {
-		return true;
+	if ((dir == DIR::UL || dir == DIR::NONE_DIR) && nowLURD.x > destLURD.x) {
+		T endLU = getEndPosOfPath(m_ObstacleBitMapLURD, true, nowLURD.y, nowLURD.x);
+		if (destLURD.y == nowLURD.y && destLURD.x > endLU) {
+			return true;
+		}
 	}
-	T endRD = getEndPosOfPath(m_ObstacleBitMapLURD, false, nowLURD.y, nowLURD.x);
-	if (destLURD.y == nowLURD.y && destLURD.x == endRD) {
-		return true;
+	if ((dir == DIR::DR || dir == DIR::NONE_DIR) && nowLURD.x < destLURD.x) {
+		T endRD = getEndPosOfPath(m_ObstacleBitMapLURD, false, nowLURD.y, nowLURD.x);
+		if (destLURD.y == nowLURD.y && destLURD.x < endRD) {
+			return true;
+		}
 	}
 
 	// LD RU
 	Pos<T> nowLDRU = coordXYtoLDRU(nowPos);
 	Pos<T> destLDRU = coordXYtoLDRU(destPos);
-	T endLD = getEndPosOfPath(m_ObstacleBitMapLDRU, true, nowLDRU.y, nowLDRU.x);
-	if (destLDRU.y == nowLDRU.y && destLDRU.x == endLD) {
-		return true;
+	if ((dir == DIR::UR || dir == DIR::NONE_DIR) && nowLDRU.x > destLDRU.x) {
+		T endLD = getEndPosOfPath(m_ObstacleBitMapLDRU, true, nowLDRU.y, nowLDRU.x);
+		if (destLDRU.y == nowLDRU.y && destLDRU.x > endLD) {
+			return true;
+		}
 	}
-	T endRU = getEndPosOfPath(m_ObstacleBitMapLDRU, false, nowLDRU.y, nowLDRU.x);
-	if (destLDRU.y == nowLDRU.y && destLDRU.x == endRU) {
-		return true;
+	if ((dir == DIR::DL || dir == DIR::NONE_DIR) && nowLDRU.x < destLDRU.x) {
+		T endRU = getEndPosOfPath(m_ObstacleBitMapLDRU, false, nowLDRU.y, nowLDRU.x);
+		if (destLDRU.y == nowLDRU.y && destLDRU.x < endRU) {
+			return true;
+		}
 	}
 
 	return false;
@@ -514,9 +633,15 @@ inline void JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, bool leftD
 			pathNode.f = pathNode.g + pathNode.h;
 			pathNode.parentPos = jnode.pathNode.pos;
 			if (leftDir) {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UL" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, UL });
 			}
 			else {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UR" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, UR });
 			}
 
@@ -547,9 +672,15 @@ inline void JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, bool leftD
 			pathNode.f = pathNode.g + pathNode.h;
 			pathNode.parentPos = jnode.pathNode.pos;
 			if (leftDir) {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DL" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, DL });
 			}
 			else {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DR" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, DR });
 			}
 
@@ -587,10 +718,16 @@ inline void JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, bool leftD
 			pathNode.f = pathNode.g + pathNode.h;
 			pathNode.parentPos = jnode.pathNode.pos;
 			if (leftDir) {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UR" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, UR });
 			}
 			else {
-				openList.push(JPSNode{ pathNode, UL });
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DR" << endl;
+#endif
+				openList.push(JPSNode{ pathNode, DR });
 			}
 
 			x = getEndPosOfPath(m_ObstacleBitMapUUDD, leftDir, y - 1, endPosX);
@@ -619,9 +756,15 @@ inline void JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, bool leftD
 			pathNode.f = pathNode.g + pathNode.h;
 			pathNode.parentPos = jnode.pathNode.pos;
 			if (leftDir) {
-				openList.push(JPSNode{ pathNode, DR });
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UL" << endl;
+#endif
+				openList.push(JPSNode{ pathNode, UL });
 			}
 			else {
+#if defined DEBUG_MODE2
+				cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DL" << endl;
+#endif
 				openList.push(JPSNode{ pathNode, DL });
 			}
 
@@ -679,10 +822,10 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 				int byteIdx = (x - 1) / BYTE_BIT;
 				BYTE bitIdx = (x - 1) % BYTE_BIT;
 
-				int endOfByteIdx = endOfPath - 1 >= 0 ? (endOfPath - 1) / BYTE_BIT : 0;
+				//int endOfByteIdx = endOfPath - 1 >= 0 ? (endOfPath - 1) / BYTE_BIT : 0;
 
 				bool breakFlag = false;
-				for (; byteIdx >= endOfByteIdx; byteIdx--) {
+				for (; byteIdx >= 0; byteIdx--) {
 					BYTE byte = *m_ObstacleBitMapLURD[y - 1][byteIdx];
 					byte = ~byte;
 					byte &= rightUnsetMasks[bitIdx];
@@ -702,6 +845,10 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 						pathNode.f = pathNode.g + pathNode.h;
 						pathNode.parentPos = jnode.pathNode.pos;
 						openList.push(JPSNode{ pathNode, UU });
+#if defined DEBUG_MODE2
+						cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UU" << endl;
+#endif
+
 
 						byte = byte & unsetMasks[emptyIdx];
 					}
@@ -739,6 +886,9 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 						pathNode.f = pathNode.g + pathNode.h;
 						pathNode.parentPos = jnode.pathNode.pos;
 						openList.push(JPSNode{ pathNode, LL });
+#if defined DEBUG_MODE2
+						cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: LL" << endl;
+#endif
 
 						byte = byte & unsetMasks[emptyIdx];
 					}
@@ -806,6 +956,9 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 						pathNode.f = pathNode.g + pathNode.h;
 						pathNode.parentPos = jnode.pathNode.pos;
 						openList.push(JPSNode{ pathNode, RR });
+#if defined DEBUG_MODE2
+						cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: RR" << endl;
+#endif
 
 						byte = byte & unsetMasks[emptyIdx];
 					}
@@ -844,6 +997,9 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 						pathNode.f = pathNode.g + pathNode.h;
 						pathNode.parentPos = jnode.pathNode.pos;
 						openList.push(JPSNode{ pathNode, DD });
+#if defined DEBUG_MODE2
+						cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DD" << endl;
+#endif
 
 						byte = byte & unsetMasks[emptyIdx];
 					}
@@ -919,6 +1075,9 @@ inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftD
 					pathNode.f = pathNode.g + pathNode.h;
 					pathNode.parentPos = jnode.pathNode.pos;
 					openList.push(JPSNode{ pathNode, LL });
+#if defined DEBUG_MODE2
+					cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: LL" << endl;
+#endif
 
 					byte = byte & unsetMasks[emptyIdx];
 				}
@@ -953,6 +1112,9 @@ inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftD
 						pathNode.f = pathNode.g + pathNode.h;
 						pathNode.parentPos = jnode.pathNode.pos;
 						openList.push(JPSNode{ pathNode, DD });
+#if defined DEBUG_MODE2
+						cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: DD" << endl;
+#endif
 
 						byte = byte & unsetMasks[emptyIdx];
 					}
@@ -1001,6 +1163,9 @@ inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftD
 					pathNode.f = pathNode.g + pathNode.h;
 					pathNode.parentPos = jnode.pathNode.pos;
 					openList.push(JPSNode{ pathNode, UU });
+#if defined DEBUG_MODE2
+					cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: UU" << endl;
+#endif
 
 					byte = byte & unsetMasks[emptyIdx];
 				}
@@ -1039,6 +1204,9 @@ inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftD
 					pathNode.f = pathNode.g + pathNode.h;
 					pathNode.parentPos = jnode.pathNode.pos;
 					openList.push(JPSNode{ pathNode, RR });
+#if defined DEBUG_MODE2
+					cout << "[new node] y: " << pathNode.pos.y << ", x: " << pathNode.pos.x << ", dir: RR" << endl;
+#endif
 
 					byte = byte & unsetMasks[emptyIdx];
 				}
