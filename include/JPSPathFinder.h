@@ -42,7 +42,7 @@ public:
 	virtual typename PathFinder<T>::iterator FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList) override;
 
 private:
-	bool checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir);
+	bool checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, std::map<Pos<T>, Pos<T>>& parentPosMap);
 	void createNewNodeLL(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
 	void createNewNodeRR(const JPSNode& jnode, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
 	void createNewNodeLLRR(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap, std::vector<PathNode<T>>& trackList);
@@ -219,92 +219,6 @@ void JPSPathFinder<T>::SetObstacle(T y, T x)
 	// LD RU
 	Pos<T> coordLDRU = coordXYtoLDRU({ y, x });
 	*m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] = *m_ObstacleBitMapLDRU[coordLDRU.y][coordLDRU.x / BYTE_BIT] | setMasks[coordLDRU.x % BYTE_BIT];
-
-#if defined DEBUG_MODE
-	cout << "[LLRR]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLLRR.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLLRR[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLLRR[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-	cout << endl;
-	cout << "[UUDD]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapUUDD.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapUUDD[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapUUDD[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << endl;
-	cout << "[LURD]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLURD.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLURD[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLURD[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << endl;
-	cout << "[LDRU]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLDRU.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLDRU[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLDRU[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << "====================================================================" << endl;
-#endif
 }
 
 template<typename T>
@@ -329,99 +243,12 @@ void JPSPathFinder<T>::UnsetObstacle(T y, T x)
 template<typename T>
 typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList)
 {
-#if defined DEBUG_MODE2
-	cout << "[LLRR]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLLRR.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLLRR[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLLRR[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-	cout << endl;
-	cout << "[UUDD]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapUUDD.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapUUDD[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapUUDD[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << endl;
-	cout << "[LURD]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLURD.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLURD[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLURD[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << endl;
-	cout << "[LDRU]" << endl;
-	for (int y = 0; y < m_ObstacleBitMapLDRU.size(); y++) {
-		for (int x = 0; x < m_ObstacleBitMapLDRU[y].size(); x++) {
-			BYTE* bytePtr = m_ObstacleBitMapLDRU[y][x];
-			BYTE byte = *bytePtr;
-			BYTE bitMask = 0b1000'0000;
-			for (int i = 0; i < 8; i++) {
-				if ((byte & bitMask) > 0) {
-					cout << "O";
-				}
-				else {
-					cout << "X";
-				}
-
-				byte <<= 1;
-			}
-		}
-		cout << endl;
-	}
-
-	cout << "====================================================================" << endl;
-#endif
-
 	// ÃÊ±âÈ­: Å½»öÀ» À§ÇÑ ÀÚ·á±¸Á¶ »ý¼º
 	std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>> openList;
 	std::vector<std::vector<bool>> closeList(m_RangeY, std::vector<bool>(m_RangeX, false));
 	std::map<Pos<T>, Pos<T>> parentPosMap;
 	Pos<T> destPos = { destY, destX };
 	bool arriveFlag = false;
-	PathNode<T> destNode = { 0 };
 
 	// ÃÊ±âÈ­: ½ÃÀÛ ³ëµå »ý¼º
 	PathNode<T> startNode;
@@ -434,18 +261,25 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 
 	// Å½»ö
 	while (!openList.empty()) {
+		cout << "-------------------------------------------------------" << endl;
+		std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>> copyOpenList = openList;
+		cout << "[open list]" << endl;
+		while (!copyOpenList.empty()) {
+			JPSNode node = copyOpenList.top(); copyOpenList.pop();
+			cout << "(" << node.pathNode.pos.x << ", " << node.pathNode.pos.y << ")" << endl;
+		}
 		JPSNode jnode = openList.top();
 		openList.pop();
 		trackList.push_back(jnode.pathNode);
 		Pos<T> pos = jnode.pathNode.pos;
 		parentPosMap.insert({ pos, jnode.pathNode.parentPos });
 
+		cout << "[now node]" << endl;
+		cout << "(" << jnode.pathNode.pos.x << ", " << jnode.pathNode.pos.y << ")" << endl;
+
 		// Á÷¼± ¶Ç´Â ´ë°¢¼± ¹æÇâÀ¸·Î µµÂøÁö°¡ ÀÖ´Â Áö È®ÀÎ
-		if (checkDestination(jnode, destPos, jnode.dir)) {
+		if (checkDestination(jnode, destPos, jnode.dir, parentPosMap)) {
 			arriveFlag = true;
-			destNode.parentPos = pos;
-			destNode.pos = destPos;
-			parentPosMap.insert({ destPos, destNode.parentPos });
 			std::cout << "µµÂø!" << std::endl;
 			break;
 		}
@@ -503,198 +337,299 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 	}
 
 	
-	//// Å½»ö ¿Ï·á
-	//if (arriveFlag) {
-	//	Pos<T> pos = destNode.pos;
-	//	while (true) {
-	//		//path << pos;
-	//		path.Add(pos);
-	//
-	//		if (startNode.pos == pos) {
-	//			break;
-	//		}
-	//		else {
-	//			pos = parentPosMap[pos];
-	//		}
-	//	}
+	// Å½»ö ¿Ï·á
+	Path<T> path;
+	if (arriveFlag) {
+		Pos<T> pos = destPos;
+		while (true) {
+			//path << pos;
+			path.Add(pos);
+	
+			if (startNode.pos == pos) {
+				break;
+			}
+			else {
+				pos = parentPosMap[pos];
+			}
+		}
+	}
+
+	iterator iter(std::move(path));
+	//while (!iter.End()) {
+	//	Pos<T> pos = *iter;
+	//	cout << pos.y << ", " << pos.x << endl;
+	//	++iter;
 	//}
 
-	return iterator();
+	return iter;
 }
 
 template<typename T>
-bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir)
+bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, std::map<Pos<T>, Pos<T>>& parentPosMap)
 {
+	PathNode<T> destNode;
+	destNode.pos = destPos;
+
 	if (jnode.pathNode.pos.x == destPos.x && jnode.pathNode.pos.y == destPos.y) {
 		return true;
 	}
 
 	Pos<T> nowPos = jnode.pathNode.pos;
-	if ((dir == DIR::LL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[y][x - 1]) && destPos.y == nowPos.y && destPos.x < nowPos.x) {
+	if ((dir == DIR::LL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x - 1]) && destPos.y == nowPos.y && destPos.x < nowPos.x) {
 		T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, nowPos.y, nowPos.x);
 		if (endLL < destPos.x) {
+			destNode.parentPos = jnode.pathNode.pos;
+			parentPosMap.insert({ destPos, destNode.parentPos });
 			return true;
-		} 
+		}
+		else {
+			return false;
+		}
 	}
-	if ((dir == DIR::RR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[y][x + 1]) && destPos.y == nowPos.y && jnode.pathNode.pos.x < destPos.x) {
+	if ((dir == DIR::RR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x + 1]) && destPos.y == nowPos.y && jnode.pathNode.pos.x < destPos.x) {
 		T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, nowPos.y, nowPos.x);
 		if (destPos.x < endRR) {
+			destNode.parentPos = jnode.pathNode.pos;
+			parentPosMap.insert({ destPos, destNode.parentPos });
 			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
 	Pos<T> nowUUDD = coordXYtoUUDD(nowPos);
 	Pos<T> destUUDD = coordXYtoUUDD(destPos);
-	if ((dir == DIR::UU || dir == DIR::NONE_DIR) && (!m_ObstacleMap[y - 1][x]) && destUUDD.y == nowUUDD.y && nowUUDD.x < destUUDD.x) {
+	if ((dir == DIR::UU || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y - 1][nowPos.x]) && destUUDD.y == nowUUDD.y && nowUUDD.x < destUUDD.x) {
 		T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, false, nowUUDD.y, nowUUDD.x);
 		if (destUUDD.x < endUU) {
+			destNode.parentPos = jnode.pathNode.pos;
+			parentPosMap.insert({ destPos, destNode.parentPos });
 			return true;
 		}
+		else {
+			return false;
+		}
 	}
-	if ((dir == DIR::DD || dir == DIR::NONE_DIR) && (!m_ObstacleMap[y + 1][x]) && destUUDD.y == nowUUDD.y && destUUDD.x < nowUUDD.x) {
+	if ((dir == DIR::DD || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y + 1][nowPos.x]) && destUUDD.y == nowUUDD.y && destUUDD.x < nowUUDD.x) {
 		T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, true, nowUUDD.y, nowUUDD.x);
 		if (endDD < destUUDD.x) {
+			destNode.parentPos = jnode.pathNode.pos;
+			parentPosMap.insert({ destPos, destNode.parentPos });
 			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
 	// LU RD
 	Pos<T> nowLURD = coordXYtoLURD(nowPos);
 	Pos<T> destLURD = coordXYtoLURD(destPos);
-	if ((dir == DIR::UL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x-1] && !m_ObstacleMap[nowPos.y - 1][nowPos.x]) && destPos.y <= nowPos.y && destPos.x <= nowPos.x) {	// Á¶°Ç ¼öÁ¤ Áß......@@@@@@@@@@@@
+	if ((dir == DIR::UL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x-1] || !m_ObstacleMap[nowPos.y - 1][nowPos.x]) && destPos.y <= nowPos.y && destPos.x <= nowPos.x) {	// Á¶°Ç ¼öÁ¤ Áß......@@@@@@@@@@@@
 		T endLU = getEndPosOfPath(m_ObstacleBitMapLURD, true, nowLURD.y, nowLURD.x);
-		if (destLURD.y == nowLURD.y) {
-			if (destLURD.x > endLU) {
-				return true;
-			}
-			else {
-				return false;
-			}
+		Pos<T> endPos = coordLURDtoXY({ nowLURD.y, endLU });
+
+		if (destPos.y <= endPos.y && destPos.x <= endPos.x) {
+			return false;
 		}
 		else {
-			Pos<T> endPos = coordLURDtoXY({ nowLURD.y, endLU });
-			Pos<T> destUUDD = coordXYtoUUDD(destPos);
-			//for (int y = nowPos.y - 1; y > endPos.y; y--) {
-			//	for (int x = nowPos.x - 1; x > endPos.x; x--) {
-			for (int y = nowPos.y - 1, x = nowPos.x - 1; y > endPos.y || x > endPos.x; y--, x--) {
-				// ÁÂ Å½»ö
-				T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, y, x);
-				if (destPos.y == nowPos.y && destPos.x > endLL) {
-					return true;
+			int y = nowPos.y - 1, x = nowPos.x - 1;
+			for (; destPos.y < y && destPos.x < x; y--, x--) {
+				if (m_ObstacleMap[y][x - 1] && m_ObstacleMap[y - 1][x]) {
+					return false;
 				}
+			}
 
+			if (y == destPos.y && x == destPos.x) {
+				destNode.parentPos = jnode.pathNode.pos;
+				parentPosMap.insert({ destPos, destNode.parentPos });
+				return true;
+			}
+			if (y > destPos.y) {
 				// »ó Å½»ö
+				Pos<T> destUUDD = coordXYtoUUDD(destPos);
 				Pos<T> uudd = coordXYtoUUDD({ y, x });
 				T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, false, uudd.y, uudd.x);
 				if (destUUDD.y == uudd.y && destUUDD.x < endUU) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
 					return true;
 				}
-			}
-			//	}
-			//}
-		}
-	}
-	if ((dir == DIR::DR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x + 1] && !m_ObstacleMap[nowPos.y + 1][nowPos.x]) && nowPos.x <= destPos.x && nowPos.y <= destPos.y) {
-		T endRD = getEndPosOfPath(m_ObstacleBitMapLURD, false, nowLURD.y, nowLURD.x);
-		if (destLURD.y == nowLURD.y) {
-			if (destLURD.x < endRD) {
-				return true;
+				else {
+					return false;
+				}
 			}
 			else {
-				return false;
+				// ÁÂ Å½»ö
+				T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, y, x);
+				if (endLL < destPos.x) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
+					return true;
+				}
+				else {
+					return false;
+				}
 			}
 		}
-		else {
-			Pos<T> endPos = coordLURDtoXY({ nowLURD.y, endRD });
-			Pos<T> destUUDD = coordXYtoUUDD(destPos);
-			//for (int y = nowPos.y + 1; y < endPos.y; y++) {
-			//	for (int x = nowPos.x + 1; x < endPos.x; x++) {
-			for (int y = nowPos.y + 1, x = nowPos.x + 1; y < endPos.y || x < endPos.x; y++, x++) {
-				// ¿ì Å½»ö
-				T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, y, x);
-				if (destPos.y == nowPos.y && destPos.x < endRR) {
-					return true;
-				}
+	}
 
-				// ÇÏ Å½»ö
-				Pos<T> uudd = coordXYtoUUDD({ y, x });
-				T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, true, uudd.y, uudd.x);
-				if (destUUDD.y == nowUUDD.y && destUUDD.x > endDD) {
-					return true;
+	if ((dir == DIR::DR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x + 1] || !m_ObstacleMap[nowPos.y + 1][nowPos.x]) && nowPos.x <= destPos.x && nowPos.y <= destPos.y) {
+		T endRD = getEndPosOfPath(m_ObstacleBitMapLURD, false, nowLURD.y, nowLURD.x);
+		Pos<T> endPos = coordLURDtoXY({ nowLURD.y, endRD });
+
+		if (endPos.y <= destPos.y && endPos.x <= destPos.x) {
+			return false;
+		}
+		else {
+			int y = nowPos.y + 1, x = nowPos.x + 1;
+			for (; y < destPos.y && x < destPos.x; y++, x++) {
+				if (m_ObstacleMap[y][x + 1] && m_ObstacleMap[y + 1][x]) {
+					return false;
 				}
 			}
-			//	}
-			//}
+
+			if (y == destPos.y && x == destPos.x) {
+				destNode.parentPos = jnode.pathNode.pos;
+				parentPosMap.insert({ destPos, destNode.parentPos });
+				return true;
+			}
+			else if (y < destPos.y) {
+				// ÇÏ Å½»ö
+				Pos<T> destUUDD = coordXYtoUUDD(destPos);
+				Pos<T> uudd = coordXYtoUUDD({ y, x });
+				T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, true, uudd.y, uudd.x);
+				if (destUUDD.y == uudd.y && destUUDD.x > endDD) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+			else {
+				// ¿ì Å½»ö
+				T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, y, x);
+				if (destPos.y == y && destPos.x < endRR) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
 		}
 	}
 
 	// LD RU
 	Pos<T> nowLDRU = coordXYtoLDRU(nowPos);
 	Pos<T> destLDRU = coordXYtoLDRU(destPos);
-	if ((dir == DIR::UR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x + 1] && !m_ObstacleMap[nowPos.y - 1][nowPos.x]) && destPos.y <= nowPos.y && nowPos.x <= destPos.x) {
+	if ((dir == DIR::UR || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x + 1] || !m_ObstacleMap[nowPos.y - 1][nowPos.x]) && destPos.y <= nowPos.y && nowPos.x <= destPos.x) {
 		T endRU = getEndPosOfPath(m_ObstacleBitMapLDRU, false, nowLDRU.y, nowLDRU.x);
-		if (destLDRU.y == nowLDRU.y) {
-			if (destLDRU.x < endRU) {
-				return true;
-			}
-			else {
-				return false;
-			}
+		Pos<T> endPos = coordLDRUtoXY({ nowLDRU.y, endRU });
+		
+		if (destPos.y <= endPos.y && endPos.x <= destPos.x) {
+			return false;
 		}
 		else {
-			Pos<T> endPos = coordLDRUtoXY({ nowLDRU.y, endRU });
-			Pos<T> destUUDD = coordXYtoUUDD(destPos);
-			//for (int y = nowPos.y - 1; y > endPos.y; y--) {
-			//	for (int x = nowPos.x + 1; x < endPos.x; x++) {
-			for (int y = nowPos.y - 1, x = nowPos.x + 1; y > endPos.y || x < endPos.x; y--, x++) {
-				// ¿ì Å½»ö
-				T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, y, x);
-				if (destPos.y == nowPos.y && destPos.x < endRR) {
-					return true;
+			int y = nowPos.y - 1, x = nowPos.x + 1;
+			for (; destPos.y < y && x < destPos.x; y--, x++) {
+				if (m_ObstacleMap[y][x + 1] && m_ObstacleMap[y - 1][x]) {
+					return false;
 				}
+			}
 
+			if (y == destPos.y && x == destPos.x) {
+				destNode.parentPos = jnode.pathNode.pos;
+				parentPosMap.insert({ destPos, destNode.parentPos });
+				return true;
+			}
+			else if (y > destPos.y) {
 				// »ó Å½»ö
+				Pos<T> destUUDD = coordXYtoUUDD(destPos);
 				Pos<T> uudd = coordXYtoUUDD({ y, x });
 				T endUU = getEndPosOfPath(m_ObstacleBitMapUUDD, false, uudd.y, uudd.x);
 				if (destUUDD.y == uudd.y && destUUDD.x < endUU) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
 					return true;
 				}
+				else {
+					return false;
+				}
 			}
-			//	}
-			//}
+			else {	
+				// ¿ì Å½»ö
+				T endRR = getEndPosOfPath(m_ObstacleBitMapLLRR, false, y, x);
+				if (destPos.y == y && destPos.x < endRR) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
 		}
 	}
-	if ((dir == DIR::DL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x - 1] && !m_ObstacleMap[nowPos.y + 1][nowPos.x]) && nowPos.y <= destPos.y && destPos.x <= nowPos.x) {
+
+	if ((dir == DIR::DL || dir == DIR::NONE_DIR) && (!m_ObstacleMap[nowPos.y][nowPos.x - 1] || !m_ObstacleMap[nowPos.y + 1][nowPos.x]) && nowPos.y <= destPos.y && destPos.x <= nowPos.x) {
 		T endLD = getEndPosOfPath(m_ObstacleBitMapLDRU, true, nowLDRU.y, nowLDRU.x);
 		Pos<T> destUUDD = coordXYtoUUDD(destPos);
-		if (destLDRU.y == nowLDRU.y) {
-			if (destLDRU.x > endLD) {
-				return true;
-			}
-			else {
-				return false;
-			}
+		Pos<T> endPos = coordLDRUtoXY({ nowLDRU.y, endLD });
+
+		if (endPos.y <= destPos.y && destPos.x <= endPos.x) {
+			return false;
 		}
 		else {
-			Pos<T> endPos = coordLDRUtoXY({ nowLDRU.y, endLD });
-			//for (int y = nowPos.y + 1; y < endPos.y; y++) {
-			//	for (int x = nowPos.x - 1; x > endPos.x; x--) {
-			for (int y = nowPos.y + 1, x = nowPos.x - 1; y < endPos.y || x > endPos.x; y++, x--) {
+			int y = nowPos.y + 1, x = nowPos.x - 1;
+			for (; y < destPos.y && destPos.x < x; y++, x--) {
+				if (m_ObstacleMap[y][x - 1] && m_ObstacleMap[y + 1][x]) {
+					return false;
+				}
+			}
+
+			if (y == destPos.y && x == destPos.x) {
+				destNode.parentPos = jnode.pathNode.pos;
+				parentPosMap.insert({ destPos, destNode.parentPos });
+				return true;
+			}
+			else if (y < destPos.y) {
 				// ÇÏ Å½»ö
 				Pos<T> uudd = coordXYtoUUDD({ y, x });
 				T endDD = getEndPosOfPath(m_ObstacleBitMapUUDD, true, uudd.y, uudd.x);
-				if (destUUDD.y == nowUUDD.y && destUUDD.x > endDD) {
+				if (destUUDD.y == uudd.y && destUUDD.x > endDD) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
 					return true;
 				}
-
-				// ÁÂ Å½»ö
-				T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, y, x);
-				if (destPos.y == nowPos.y && destPos.x > endLL) {
-					return true;
+				else {
+					return false;
 				}
 			}
-			//	}
-			//}
+			else {
+				// ÁÂ Å½»ö
+				T endLL = getEndPosOfPath(m_ObstacleBitMapLLRR, true, y, x);
+				if (endLL < destPos.x) {
+					parentPosMap.insert({ {y, x}, jnode.pathNode.pos });
+					destNode.parentPos = { y, x };
+					parentPosMap.insert({ destPos, destNode.parentPos });
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
 		}
 	}
 
