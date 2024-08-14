@@ -23,6 +23,9 @@ struct PathPosition {
 	bool operator!=(PathPosition& other) {
 		return !(*this == other);
 	}
+	bool operator!=(const PathPosition& other) const {
+		return !(*this == other);
+	}
 	bool operator<(const PathPosition& other) const
 	{
 		if (y != other.y)
