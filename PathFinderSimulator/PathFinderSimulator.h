@@ -191,62 +191,6 @@ void ProcessPaintJPS(HWND hWnd) {
         }
         cell.SetParentCell(node.parentPos.y, node.parentPos.x);
         Pos<PosType>& parentPos = node.parentPos;
-        //if (node.pos.y == parentPos.y) {
-        //    if (node.pos.x < parentPos.x) {
-        //        for (int x = parentPos.x - 1; x > node.pos.x; x--) {
-        //            if(grid.cells[node.pos.y][x].GetEnColor() == WHITE_DEFAULT)
-        //                grid.cells[node.pos.y][x].SetColor(BRIGHT_GRAY);
-        //        }
-        //    }
-        //    else {
-        //        for (int x = parentPos.x + 1; x < node.pos.x; x++) {
-        //            if (grid.cells[node.pos.y][x].GetEnColor() == WHITE_DEFAULT)
-        //                grid.cells[node.pos.y][x].SetColor(BRIGHT_GRAY);
-        //        }
-        //    }
-        //}
-        //else if (node.pos.x == parentPos.x) {
-        //    if (node.pos.y < parentPos.y) {
-        //        for (int y = parentPos.y - 1; y > node.pos.y; y--) {
-        //            if (grid.cells[y][node.pos.x].GetEnColor() == WHITE_DEFAULT)
-        //                grid.cells[y][node.pos.x].SetColor(BRIGHT_GRAY);
-        //        }
-        //    }
-        //    else {
-        //        for (int y = parentPos.y + 1; y < node.pos.y; y++) {
-        //            if (grid.cells[y][node.pos.x].GetEnColor() == WHITE_DEFAULT)
-        //                grid.cells[y][node.pos.x].SetColor(BRIGHT_GRAY);
-        //        }
-        //    }
-        //}
-        //else {
-        //    if (node.pos.y < parentPos.y) {
-        //        int x = parentPos.x;
-        //        for (int y = parentPos.y - 1; y > node.pos.y; y--) {
-        //            if (node.pos.x < parentPos.x) {
-        //                if (grid.cells[y][--x].GetEnColor() == WHITE_DEFAULT)
-        //                    grid.cells[y][x].SetColor(BRIGHT_GRAY);
-        //            }
-        //            else {
-        //                if (grid.cells[y][++x].GetEnColor() == WHITE_DEFAULT)
-        //                    grid.cells[y][x].SetColor(BRIGHT_GRAY);
-        //            }
-        //        }
-        //    }
-        //    else {
-        //        int x = parentPos.x;
-        //        for (int y = parentPos.y + 1; y < node.pos.y; y++) {
-        //            if (node.pos.x < parentPos.x) {
-        //                if(grid.cells[y][--x].GetEnColor() == WHITE_DEFAULT)
-        //                    grid.cells[y][x].SetColor(BRIGHT_GRAY);
-        //            }
-        //            else {
-        //                if (grid.cells[y][++x].GetEnColor() == WHITE_DEFAULT)
-        //                    grid.cells[y][x].SetColor(BRIGHT_GRAY);
-        //            }
-        //        }
-        //    }
-        //}
 
         grid.Draw(hMemDC, MemDC_Rect.right, MemDC_Rect.bottom);
         DrawInformationBox(hMemDC);
