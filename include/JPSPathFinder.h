@@ -6,6 +6,8 @@
 //#define DEBUG_MODE
 #define DEBUG_MODE2
 
+using namespace std;
+
 template<typename T>
 class JPSPathFinder : public PathFinder<T> 
 {
@@ -39,21 +41,21 @@ public:
 	virtual void SetObstacle(T y, T x) override;
 	virtual void UnsetObstacle(T y, T x) override;
 
-	virtual typename PathFinder<T>::iterator FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList) override;
+	virtual typename PathFinder<T>::iterator FindPath(T startY, T startX, T destY, T destX, vector<PathNode<T>>& trackList) override;
 
 private:
-	bool checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	bool createNewNodeLLRR(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	bool createNewNodeUUDD(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	bool createNewNodeLLRR(const JPSNode& jnode, Pos<T> startPos, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	bool createNewNodeUUDD(const JPSNode& jnode, Pos<T> startPos, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	void createNewNodeLURD(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
-	void createNewNodeLDRU(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap);
+	bool checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, map<Pos<T>, Pos<T>>& parentPosMap);
+	bool createNewNodeLLRR(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
+	bool createNewNodeUUDD(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
+	bool createNewNodeLLRR(const JPSNode& jnode, Pos<T> startPos, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
+	bool createNewNodeUUDD(const JPSNode& jnode, Pos<T> startPos, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
+	void createNewNodeLURD(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
+	void createNewNodeLDRU(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap);
 
 	// (y, x)는 장애물이 아님을 가정!!,	(y, x) 좌(또는 우) 처음 만나는 장애물 x위치 반환
-	T getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
+	T getEndPosOfPath(vector<vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
 	// (y, x)는 장애물임을 가정!!,		(y, x) 좌(또는 우) 처음 만나는 비장애물 x위치 반환
-	T getEndPosOfObstacle(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
+	T getEndPosOfObstacle(vector<vector<BYTE*>>& straightPath, bool leftDir, T y, T x);
 
 protected:
 	using PathFinder<T>::calculate_H;
@@ -71,11 +73,11 @@ protected:
 	BYTE* m_ChunkLURD;	// LU RD
 	BYTE* m_ChunkLDRU;	// LD RU
 
-	std::vector<std::vector<bool>> m_ObstacleMapUUDD;
+	vector<vector<bool>> m_ObstacleMapUUDD;
 
-	std::vector<std::vector<BYTE*>> m_ObstacleBitMapUUDD;		// UU DD
-	std::vector<std::vector<BYTE*>> m_ObstacleBitMapLURD;		// LU RD
-	std::vector<std::vector<BYTE*>> m_ObstacleBitMapLDRU;		// LD RU
+	vector<vector<BYTE*>> m_ObstacleBitMapUUDD;		// UU DD
+	vector<vector<BYTE*>> m_ObstacleBitMapLURD;		// LU RD
+	vector<vector<BYTE*>> m_ObstacleBitMapLDRU;		// LD RU
 
 private:
 	Pos<T> coordXYtoUUDD(Pos<T> pos);
@@ -117,7 +119,7 @@ void JPSPathFinder<T>::Init(T rangeY, T rangeX)
 	}
 
 
-	std::vector<BYTE> masks = {
+	vector<BYTE> masks = {
 		0b0111'1111,
 		0b0011'1111,
 		0b0001'1111,
@@ -234,12 +236,12 @@ void JPSPathFinder<T>::UnsetObstacle(T y, T x)
 }
 
 template<typename T>
-typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, T destY, T destX, std::vector<PathNode<T>>& trackList)
+typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, T destY, T destX, vector<PathNode<T>>& trackList)
 {
 	// 초기화: 탐색을 위한 자료구조 생성
-	std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>> openList;
-	std::vector<std::vector<bool>> closeList(m_RangeY, std::vector<bool>(m_RangeX, false));
-	std::map<Pos<T>, Pos<T>> parentPosMap;
+	priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>> openList;
+	vector<vector<bool>> closeList(m_RangeY, vector<bool>(m_RangeX, false));
+	map<Pos<T>, Pos<T>> parentPosMap;
 	Pos<T> destPos = { destY, destX };
 	bool arriveFlag = false;
 
@@ -256,7 +258,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 	// 탐색
 	while (!openList.empty()) {
 		cout << "-------------------------------------------------------" << endl;
-		std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>> copyOpenList = openList;
+		priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>> copyOpenList = openList;
 		cout << "[open list]" << endl;
 		while (!copyOpenList.empty()) {
 			JPSNode node = copyOpenList.top(); copyOpenList.pop();
@@ -274,7 +276,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 		// 직선 또는 대각선 방향으로 도착지가 있는 지 확인
 		if (checkDestination(jnode, destPos, jnode.dir, openList, closeList, parentPosMap)) {
 			arriveFlag = true;
-			std::cout << "도착!" << std::endl;
+			cout << "도착!" << endl;
 			break;
 		}
 
@@ -348,7 +350,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 		}
 	}
 
-	iterator iter(std::move(path));
+	iterator iter(move(path));
 	//while (!iter.End()) {
 	//	Pos<T> pos = *iter;
 	//	cout << pos.y << ", " << pos.x << endl;
@@ -359,7 +361,7 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 }
 
 template<typename T>
-bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, std::map<Pos<T>, Pos<T>>& parentPosMap)
+bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DIR dir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, map<Pos<T>, Pos<T>>& parentPosMap)
 {
 	PathNode<T> destNode;
 	destNode.pos = destPos;
@@ -663,13 +665,13 @@ bool JPSPathFinder<T>::checkDestination(const JPSNode& jnode, Pos<T> destPos, DI
 }
 
 template<typename T>
-inline bool JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap)
+inline bool JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap)
 {
 	return createNewNodeLLRR(jnode, jnode.pathNode.pos, leftDir, openList, closeList, destPos, parentPosMap);
 }
 
 template<typename T>
-bool JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, Pos<T> startPos, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap) {
+bool JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, Pos<T> startPos, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap) {
 	bool ret = false;
 
 	T x;
@@ -814,13 +816,13 @@ bool JPSPathFinder<T>::createNewNodeLLRR(const JPSNode& jnode, Pos<T> startPos, 
 }
 
 template<typename T>
-inline bool JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap)
+inline bool JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap)
 {
 	return createNewNodeUUDD(jnode, jnode.pathNode.pos, leftDir, openList, closeList, destPos, parentPosMap);
 }
 
 template<typename T>
-bool JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, Pos<T> startPos, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap) {
+bool JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, Pos<T> startPos, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap) {
 	bool ret = false;
 
 	Pos<T> coordPos = coordXYtoUUDD(startPos);
@@ -959,7 +961,7 @@ bool JPSPathFinder<T>::createNewNodeUUDD(const JPSNode& jnode, Pos<T> startPos, 
 }
 
 template<typename T>
-inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap)
+inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap)
 {
 	if ((jnode.pathNode.pos.x == 0 && jnode.pathNode.pos.y == 0) || (jnode.pathNode.pos.x == m_RangeX - 1 && jnode.pathNode.pos.y == m_RangeY - 1)) {
 		return;
@@ -1203,7 +1205,7 @@ inline void JPSPathFinder<T>::createNewNodeLURD(const JPSNode& jnode, bool leftD
 }
 
 template<typename T>
-inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftDir, std::priority_queue<JPSNode, std::vector<JPSNode>, std::greater<JPSNode>>& openList, std::vector<std::vector<bool>>& closeList, Pos<T> destPos, std::map<Pos<T>, Pos<T>>& parentPosMap)
+inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftDir, priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>>& openList, vector<vector<bool>>& closeList, Pos<T> destPos, map<Pos<T>, Pos<T>>& parentPosMap)
 {
 	Pos<T> fixedCoordPos = coordXYtoUUDD(jnode.pathNode.pos);
 
@@ -1451,7 +1453,7 @@ inline void JPSPathFinder<T>::createNewNodeLDRU(const JPSNode& jnode, bool leftD
 }
 
 template<typename T>
-T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
+T JPSPathFinder<T>::getEndPosOfPath(vector<vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
 {
 	int byteIdx = x / BYTE_BIT;
 	BYTE bitIdx = x % BYTE_BIT;
@@ -1505,7 +1507,7 @@ T JPSPathFinder<T>::getEndPosOfPath(std::vector<std::vector<BYTE*>>& straightPat
 }
 
 template<typename T>
-T JPSPathFinder<T>::getEndPosOfObstacle(std::vector<std::vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
+T JPSPathFinder<T>::getEndPosOfObstacle(vector<vector<BYTE*>>& straightPath, bool leftDir, T y, T x)
 {
 	int byteIdx = x / BYTE_BIT;
 	BYTE bitIdx = x % BYTE_BIT;
