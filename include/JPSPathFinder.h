@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 //#define DEBUG_MODE
-#define DEBUG_MODE2
+//#define DEBUG_MODE2
 
 using namespace std;
 
@@ -155,7 +155,7 @@ void JPSPathFinder<T>::Init(T rangeY, T rangeX)
 			*m_ObstacleBitMapLDRU[rowLength - 1 - y][y / BYTE_BIT] = *m_ObstacleBitMapLDRU[rowLength - 1 - y][y / BYTE_BIT] & mask;
 		}
 		else {
-			BYTE mask = masks[minRange / BYTE_BIT];
+			BYTE mask = masks[minRange % BYTE_BIT];
 			for (int x = 0; x < minRange / BYTE_BIT; x++) {
 				*m_ObstacleBitMapLDRU[y][x] = 0;
 				*m_ObstacleBitMapLDRU[rowLength - 1 - y][x] = 0;
@@ -186,7 +186,7 @@ void JPSPathFinder<T>::Init(T rangeY, T rangeX)
 			*m_ObstacleBitMapLURD[rowLength - 1 - y][y / BYTE_BIT] = *m_ObstacleBitMapLURD[rowLength - 1 - y][y / BYTE_BIT] & mask;
 		}
 		else {
-			BYTE mask = masks[minRange / BYTE_BIT];
+			BYTE mask = masks[minRange % BYTE_BIT];
 			for (int x = 0; x < minRange / BYTE_BIT; x++) {
 				*m_ObstacleBitMapLURD[y][x] = 0;
 				*m_ObstacleBitMapLURD[rowLength - 1 - y][x] = 0;
@@ -257,21 +257,21 @@ typename PathFinder<T>::iterator JPSPathFinder<T>::FindPath(T startY, T startX, 
 
 	// 탐색
 	while (!openList.empty()) {
-		cout << "-------------------------------------------------------" << endl;
-		priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>> copyOpenList = openList;
-		cout << "[open list]" << endl;
-		while (!copyOpenList.empty()) {
-			JPSNode node = copyOpenList.top(); copyOpenList.pop();
-			cout << "(" << node.pathNode.pos.x << ", " << node.pathNode.pos.y << ")" << endl;
-		}
+		//cout << "-------------------------------------------------------" << endl;
+		//priority_queue<JPSNode, vector<JPSNode>, greater<JPSNode>> copyOpenList = openList;
+		//cout << "[open list]" << endl;
+		//while (!copyOpenList.empty()) {
+		//	JPSNode node = copyOpenList.top(); copyOpenList.pop();
+		//	cout << "(" << node.pathNode.pos.x << ", " << node.pathNode.pos.y << ")" << endl;
+		//}
 		JPSNode jnode = openList.top();
 		openList.pop();
 		trackList.push_back(jnode.pathNode);
 		Pos<T> pos = jnode.pathNode.pos;
 		parentPosMap.insert({ pos, jnode.pathNode.parentPos });
 
-		cout << "[now node]" << endl;
-		cout << "(" << jnode.pathNode.pos.x << ", " << jnode.pathNode.pos.y << ")" << endl;
+		//cout << "[now node]" << endl;
+		//cout << "(" << jnode.pathNode.pos.x << ", " << jnode.pathNode.pos.y << ")" << endl;
 
 		// 직선 또는 대각선 방향으로 도착지가 있는 지 확인
 		if (checkDestination(jnode, destPos, jnode.dir, openList, closeList, parentPosMap)) {
